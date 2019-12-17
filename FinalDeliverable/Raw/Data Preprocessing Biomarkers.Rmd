@@ -1,0 +1,31 @@
+---
+title: "Data Preprocessing Biomarkers"
+output: html_notebook
+---
+
+This notebook saves an .RData object with a data frame that contains biomarkers but organized in a way that is convenient for PCA. 
+
+Load package for reading Excel files:
+```{r}
+library(readxl)
+```
+
+Read files for biomarkers:
+```{r}
+CF_Biomarkers <- read_excel("CF_Biomarkers.xlsx")
+```
+
+Save dataframe as RData:
+```{r}
+save(CF_Biomarkers, file = "CF_Biomarkers.RData")
+```
+
+Now read file with Biomarkers data but organized for PCA:
+```{r}
+CF_BiomarkersPCA <- read_excel("CF_BiomarkersPCA.xlsx")
+```
+
+Save dataframe as RData:
+```{r}
+save(CF_BiomarkersPCA, file = "CF_BiomarkersPCA.RData")
+```

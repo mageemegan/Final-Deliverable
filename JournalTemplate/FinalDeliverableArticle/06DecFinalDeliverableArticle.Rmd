@@ -1,0 +1,517 @@
+---
+title: Template for the Creation of Reproducable Research Journal Articles using R Markdown
+author:
+  - name: Megan Magee
+    email: mageem@mcmaster.ca
+    affiliation: Some Institute of Technology
+    footnote: Corresponding Authors
+  - name: Philip Britz-McKibbin
+    email: britz@mcmaster.ca
+    affiliation: Another University
+  - name: Additional Author
+    email: 
+    affiliation: Again Another University
+# If you do not wish to include one of the emails in the corresponding authors footnote, just simply leave the email field blank. Do NOT delete the email field.
+address:
+# Make sure not to make the two code sections the same of the superscript by authors name in the output document will become the same for both authors. and they will no longer match the footnote scrip byt department and address
+  - code: Some Institute of Technology
+    address: McMaster University, Department of Chemistry and Chemical Biology, Main St W, Hamilton, ON, L8S 4L8
+  - code: Another University
+    address: McMaster University, Department of Chemsitry and Chemical Biology, Main St W, Hamilton, ON, L8S 4L8
+  - code: Again Another University
+    address: McMaster Children's Hospital, Main St W, Hamilton, ON, L8N 3Z5
+abstract: |
+  As of late, the need for journal articles to be created in such a way that the work done and the data analysis displayed in these articles can be reproduced, has become a growing aspect of importance in the research industry. Currently, many researchers do not have a definitive practice in place that will ensure that their research can be understood and recreated by fellow researchers. Without a means of reproducing research results, the research process for many researchers may be delayed as additional time and money must be spent on attempts to recreate results that have already been proven. The purpose of this article is to act as a template for the writing of future research papers by the Britz McKibbin group in hopes that the document will be easily reproduced by future lab members and fellow researchers alike. This article template will display the many different possible uses of R along with the formatting features that are commonly used by the Britz group and how to recreate them with the R Software.
+
+  By using the R programming software to write journal articles, all of the details related to the displayed statistical analyseies in the journal will be avaialble to the reader by looking at the R script. These R scripts which will be stored in a GitHub repository, may be accessed by the public upon request.
+
+ 
+journal: "Journal of Gastroenterology"
+date: "`r Sys.Date()`"
+bibliography: mybibfile.bib
+#linenumbers: true
+#numbersections: true
+csl: elsevier-harvard.csl
+output: rticles::elsevier_article
+rmarkdown::pdf_document:
+fig_caption: yes        
+includes:  
+in_header: my_position.tex
+---
+<!-- First you want to load your R packages that you will need for the creation of your paper. You can do this by inserting a chunck of code as you will see below
+--> 
+```{r load-packages, include=FALSE}
+
+#By putting include = False that ensures that these packages will be loaded, but this chunk of R code will not be included in you output file
+
+library(tidyverse)
+library(gridExtra)
+library(kableExtra)
+library(rcompanion)
+library(readxl)
+library(FinalDeliverable)
+library(data.table)
+library(RColorBrewer)
+library(gplots)
+library(gridExtra)
+library(grid)
+library(ggplotify)
+library(cowplot)
+
+#If you dot already have gridExtra and kableExtra you will need to download them to do many of the necessary basic journal making functions. by typing libray and inputting those functions, you should see a pop up go across th top of your screen when you got to asve the file that will tell you you do not have these packages and it will ask you if you would like to install them
+
+# Dont forget to load the package containing your saved dataset (Both the Raw xlsx file and the .RData file) SEE: Reading and saving assay data.Rmd for more details
+```
+
+
+```{r load-data, echo=FALSE}
+# By putting echo = FALSE, the code cunk will be run but only the outout of the code will be displayed in the knitted document
+
+data("CF_Biomarkers")
+data("CF_BiomarkersPCA")
+View(CF_Biomarkers)
+
+```
+
+```{r, echo=FALSE}
+plot1<-ggplot(data = CF_Biomarkers, aes(x = `RMT`, y = `RPA`, color=Sample)) + geom_point()
+```
+
+```{r include=FALSE}
+#the purpose of this line of code is to remove comments from the output file, e.g. ## and any warning messages
+knitr::opts_chunk$set(comment = NA)
+```
+
+Keywords
+========
+
+LaTex; R Markdown; Reproducable Research 
+
+Introduction
+=============
+
+#### background
+
+In this template journal article, we will go through and explain how to perform statistical analysis and data transformations. The key features we will discuss include; taking the mean of a dataset variable(s), performing log transformations, inputing data into simple and complex tables, how to format tables, introduction of math notation into the article, plotting simple graphs along with more complex pinciple component analysis graphs and heat map analysis, as well as figure input and layout options.
+
+Mean and Log Transformations
+============================
+
+
+Taking the mean of a data set is an important data transfermation that is necessary in research practice before further statistical analysis can be performed. The same can be said about log transformations. The purpose in our research for performing a log transformation on our data set is to create a set of values that are within a smaller range as it increases the accuracy of statistical analyses that use varience as a key component for data correlation. This is necessary before you perform an analysis such as PCA, as highly differential values will skewer PCA results and often prevent proper clustering.
+
+#### mean
+
+When taking a mean of a set of data you need to first define the data set from which you will take the mean. You are not limited to only taking the mean of the entire data set, you are also able to specify which rows and columns you want to be included in the mean calculation. The function _Select_(Column Name:Column Name) will select for the range of columns specified, while the function _Filter_(Row Name: Row Name) will select for the specified rows. After the filters have applied, the __lapply(mean)__ function can be applied to produce the mean values. 
+By specifying that the columns CF_1 to CF_5 of the CF_BiomarkersPCA dataset should be included in the mean calculation, the following values were obtained:
+
+```{r Mean, include=FALSE}
+# you need to define what you want to take the mean of first and from which dataset (that is included in your package) that you are getting this variable from
+#I am going to call the mean of my Relative Peak Areas (RPA) "means_selected"
+
+#In order to calculate the function for a range of values, you must use the select function. In the line of code below 
+
+CF_BiomarkersPCA %>% select(CF_1:CF_5) %>% lapply(mean)
+
+#the data will then appear in a list format, with each of the values listed under eachother. This is not a very useful way of presenting the data so below I explain how to unlist the data
+```
+
+```{r, unlist data, echo=FALSE}
+# then to put the data in a table format, we will add the unlist function. the following line is naming this selection of data "means_selected"
+
+means_selected <- CF_BiomarkersPCA %>% select(CF_1:CF_5) %>% lapply(mean) %>% unlist()
+
+#To display this data type:
+means_selected
+```
+When we want to perform a tansformation on a set of data, it may be required that your data be in a matrix rather then a data frame. In order to make a matrix of your data set, you want to turn your row numbers into your labeling variable. In the __CF_Biomarkers__ matrix, this would be the "Label" variable. Once the row names have been set, the data set is turned into a matrix using the function _data.matrix_(Dataset Name)
+
+```{r creating a data matrix out of our data, include=FALSE}
+# Our data CF_BiomarkersPCA has row numbers assigned to each of the labels, If we want to change the row names from 1, 2, 3, ect. into the names of our biomarker labels we must do the following:
+
+row.names(CF_BiomarkersPCA) <- CF_BiomarkersPCA$Label
+
+#Next the data must be transformed into a matrix so that it can be put into a heat map or PCA plot:
+
+Biomarker_Matrix <- data.matrix(CF_BiomarkersPCA)
+
+```
+
+#### log transformation
+
+The log transformation of data can be done by first defining what we want to transform, for example, the relative peak areas (RPA), or possibly the entire matrix. The transformation is then done by performing the function _log(Matrix Name)_ and assigning a name to the newly transformed data (e.g T_logBM)
+
+```{r, include=FALSE}
+T_logBM = log (Biomarker_Matrix)
+```
+This will perform the transformation, but in order to visualize it you must type the new transformed data's name _T_logBM_ in a chunk of R code. The way that data is displayed in the optput document is not appealing as it is so we opt. to put the outputted data in a table. In order to display the table in a way that is appealing and logical, the two types of patient samples were divided (CF and CF NEG) into separate tables.
+```{r visualize log transformation positive, echo=FALSE}
+T_logBM %>%
+  as.data.frame() %>%
+  rownames_to_column()%>%
+  select(-Label, -starts_with("NEG")) %>%
+  rename(Biomarker = rowname) %>%
+  kable(digits = 3,
+        caption = "Visualization of Log Transformed Data for CF Positive Patients",
+        booktabs = TRUE) %>%
+  kable_styling(latex_options=c("scale_down", "striped","HOLD_position"))
+  
+```
+
+```{r visualize log transformation negative, echo=FALSE}
+T_logBM %>%
+  as.data.frame() %>%
+  rownames_to_column()%>%
+  select(-Label, -starts_with("CF")) %>%
+  rename(Biomarker = rowname) %>%
+  kable(digits = 3,
+         caption = "VIsualization of Log Transformed Data for CF Negative Patients",
+        booktabs = TRUE) %>%
+  kable_styling(latex_options=c("scale_down", "striped", "HOLD_position"))
+  
+```
+
+Simple and Complex Tables
+=========================
+
+#### simple tables
+
+Tables can be created very simply by inputting the names of the different headers/variables and listing the corresponding values below. This method requires that the user inputs the data manually and produces a table that can not be readily formatted. These kinds of tables do not need to be enclosed in a chunk of code as they are a result of R Markdown formatting features and not an output of a written code. The following is an example of such table:
+
+\begin{center}
+Table 3: Simple table example
+\end{center}
+
+Sample | Mean
+- | -
+CF_1 | 0.2351090
+CF_2 | 0.2507217
+CF_3 | 0.3953087
+CF_4 | 0.4108190
+CF_5 | 0.2038396
+
+As seen above in Table 3, the caption is centered. Centering a caption or any written text is done by using raw LaTeX in R Markdown (@Jonathan2014Stack)
+
+#### complex tables
+
+It is also possible to create more complex tables that are susceptable to a wide range of formatting options. Complex tables are often created using a data set that has had various statistical functions applied. 
+
+
+```{r descriptive stats, echo=FALSE}
+#Digits sets the number of displayed digits, booktabs removes lines between values and creates a publication style table, caption allows for a caption to be displayed
+
+descriptive.BM <- data.frame(Statistic = c("Mean", "Max", "Standard Deviation"), Relative.migration.time = c(mean(CF_Biomarkers$RMT),sd(CF_Biomarkers$RMT), max(CF_Biomarkers$RMT)), Relative.peak.area = c(mean(CF_Biomarkers$RPA), sd(CF_Biomarkers$RPA), max(CF_Biomarkers$RPA)))
+kable(descriptive.BM,
+digits = 4,
+caption = "Stat analysis results for dataset",
+booktabs = TRUE,
+escape = FALSE) %>%
+kable_styling(latex_options = c("striped", "scale_down", "hold_position"))
+
+# Note: the caption cannot contain the name of the dataset or the name of the kind of statistical analysis performed or it will produce an error
+# The hold position option makes sure the table doesnt move around your page
+```
+
+
+The table above has been formatted to include grey stripes on alternating rows; this feature allows for the reader to more easily distinguish between rows of data. This feature is esspecially useful for tables containing a large number of rows and columns. The table has also been formatted to show only the first 4 digits of each value, which allows for only the significant digits to be displayed. Other formatting features included in ths table include the "scale_down" parameter and Booktabs = TRUE. These features make sure the table is scaled in such a way that all of the table is fitted between the margins of the paper and for applying formatting adjustments to create a publication quality table respectivly.
+
+Math Notation using LaTeX
+==========================
+
+#### math notation
+
+R Markdown on its own can perform mathematical calculations by inputting functions and equations into chunks of code. Although it can calculate results, it cannot display the equations used in the calculations in a mathematical notation. In order to display mathematical equations that are in the proper notation, the package __LaTeX__ is needed. How LaTeX works is that any equations or symbols inputted between a pair of string signs ($) will output the characters in mathematical notation inline with your text.
+
+<!-- For equations that are not in-line, you will have to input the equation or symbols between a pair of two string signs ($$)
+-->
+
+By typing __$ $x + 1$ $__ you will get the output : $x+1$
+
+
+Knowing how to input mathematical notation is only the fist step. It is also important to know how to arrange your equations and thier respective outputs. if you want your equations in one chunk, but spread out onto separate lines, you can input backslashes or an align function to move the equation that follows on to the next line:
+
+<!-- normally you would use \\ to introduce a line break, but this will only work for html outputs, for a pdf output such as this article we must use the begin and end align* functions instead.
+-->
+
+\begin{align*}
+x + y = z\\
+x - y > z\\
+x  y < z
+\end{align*}
+
+
+```{r, rules about math notation, include=FALSE}
+#\\ introduces line breaks
+#_ introduces a subscript
+#^ introduces a superscript
+# if you want more then one thing in a sub or super script you can use _ or ^ and {} brackets
+#fractions are written as \frac{numerator}{denominator}
+# Summation signs are written as: \sum_{i=1}^n x_i
+#Greek letters are \alpha, \beta, \delta etc..
+```
+
+Once your equations are made you will want to add labels to your equations so that you can reference them throughout the jornal article. This is done by first introducing the equation with a _begin_ function, then inputting the equation and the label, and finally closing off the reference with an _end_ function. 
+
+\begin{equation}
+\label{eq:1}
+v_{ep}=\mu_{ep}E
+\end{equation}
+
+It is now possible to reference this equation we just made using LaTex. "Equation (\ref{eq:1}) is an example of an equation used in Capillary Electrophoresis to calculate the _electrophoretic velocity_".
+
+```{r All greek symbols, include=FALSE}
+#name --- symbol in r --- LaTeX input:
+
+#alpha --- \( \alpha \ A \) --- \alpha 
+#beta --- \( \beta \ B \) --- \beta 
+#gamma --- \( \gamma \ \Gamma \) --- \gamma 
+#delta --- \( \delta \ \Delta \) --- \delta 
+#epsilon --- \( \epsilon \ E \) --- \epsilon 
+#(epsilon) --- \( \varepsilon \ E \) --- \varepsilon
+#zeta --- \( \zeta \ Z \) --- \zeta 
+#eta --- \( \eta \ H \) --- \eta 
+#theta --- \( \theta \ \Theta \) --- \theta 
+#iota --- \( \iota \ I \) --- \iota 
+#kappa --- \( \kappa \ K \) --- \kappa 
+#lambda --- \( \lambda \ \Lambda \) --- \lambda 
+#mu --- \( \mu \ M \) --- \mu 
+#nu --- \( \nu \ N \) --- \nu 
+#xi --- \( \xi \ \Xi \) --- \xi 
+#omicron --- \( \omicron \ O \) --- \omicron 
+#pi --- \( \pi \ \Pi \) --- \pi 
+#rho --- \( \rho \ P \) ---- \rho
+#sigma --- \( \sigma \ \Sigma \) --- \sigma 
+#tau --- \( \tau \ T \) --- \tau 
+#upsilon --- \( \upsilon \ Y \) --- \upsilon 
+#phi --- \( \phi \ \Phi \) --- \phi 
+#(phi) --- \( \varphi \) --- \varphi
+#chi --- \( \chi \ X \) --- \chi 
+#psi ---- \( \psi \ \Psi \) --- \psi 
+#omega --- \( \omega \ \Omega \) --- \omega 
+
+```
+
+Plotting and Arranging
+======================
+
+
+#### plotting
+
+One of the advantages of R Markdown is that the figures/plots can be created in R. By having your plots created directly in R Markdown, recreating the plots becomes very simple. All of the R script that was used to create the output graph, and all of the formatting and data processing done to the data to acheive the final figure is available. By making this information available, the reproducability of the work shown in the journal article is substantially increased.
+
+If we wanted to visualize the amounts of a certain disease biomarker present in patient samples, a bar graph could be made. This graph would have the concentration (RPA) displayed on the Y axis and the sample labels on the X axis with the relative heights showing the greater or lesser presence of the specified marker. In order to use our current data set to do this, we will first have to filter for the biomarker we want to look at.
+
+```{r filter column RMT for bar graph, include=FALSE}
+# purposful use of the double == so that we can select a value
+CF_BiomarkersFiltered <- filter(CF_Biomarkers, RMT == 0.6639)
+CF_BiomarkersFiltered
+```
+Once the data has been filtered, the graph can be created using the _ggplot_ function, coupled with the formatting parameter _geom_bar_:
+
+```{r creating the filtered bar graph, fig2, echo=FALSE}
+# I want to filter for a specific biomarker which can be found at a m/z of 76.0393:
+
+fig2 <- filter(CF_Biomarkers, RMT == 0.6639) %>% ggplot(CF_Biomarkers,mapping =  aes(x = Sample, y = RPA))+ geom_bar(stat ="identity") + labs(x="Sample", y="RPA")+
+theme (axis.text.x = element_text(angle = 90))
+#then to visualize:
+fig2.1<-fig2+ggtitle("Comparison of RPA for samples with biomarker at RMT 0.6639")
+fig2.1
+# are getting the formatting issue where sample labels are being overlapped how do i fix? to fix this change the size of the font or change the orientation of the labels
+```
+
+```{r creating scatter plot, plot1, include=FALSE}
+# figure 1
+plot1<-ggplot(data = CF_Biomarkers, aes(x = `RMT`, y = `RPA`, color=Sample)) + geom_point()
+#for geom_point, you can type (size = 1.5, color = "blue) to adjst the formatting of the plotted points
+plot1.1<-plot1 + ggtitle("Differential Presence of Biomarkers in CF Patient Samples")+theme(legend.text = element_text(size = 7))+theme(legend.background = element_rect(size = 0.1))+theme(legend.title = element_text(size = 9))
+```
+#### arranging figures
+
+Once the plots have been created you can use either the __grid.arrange__ or the __plot_grid__ functions to arrange your plots so that they appear in one panel or one image. For this paper we will be placing the bar graph above the scatter plot. By having multiple figures in one image it becomes easier to compare and analyse related results.
+
+```{r arranginf plots into figure, echo=FALSE}
+#We are going to arrange it so that "fig1" and "plot1" are inn the same image together
+plot_grid(fig2.1, plot1.1, ncol=1,labels = c('A', 'B'),greedy =TRUE, rel_heights = c(1.9,3))
+#If you wanted a title for t
+```
+Complex Statistical Analysis
+============================
+
+#### heatmaps
+
+Available with R are several packages that allow for the creation of heatmaps. Depending on which package you use for heatmap generation, it is possible that the final figure may be slightly different depending on what kind of transformations are possible with each heatmap function. Two possible heat map functions include __heatmap__ or __heatmap.2__ which are functions found within the package _gplots_. Heatmaps are a useful tool for data visualization, but do not provide accurate or specific data correlation information.
+
+<!--other heatmap functions incude: heatmap.3 (package = GMD), ComplexHeatmap (function), Heatplus, etc.
+-->
+In order to build a heatmap in R you will need to turn your dataset into a data matrix. This will ensure the table consists of only results and there are no variables or headers being included as a value during analysis. In this paper as explained earlier, the dataset CF_BiomarkersPCA was turned into a matrix called Biomarkers_Matrix. Although the matrix worked as is, the layout included a row with values marked as NA, as this is the row that contained the biomarker _Lable_ values. In order to create a more suitable matrix, the _Label_ row was removed from the matrix and the label values were used to name each of the rows in the Matrix.
+
+Once this was done, a heatmap could be created using the _heatmap_ function:
+
+```{r echo=FALSE}
+
+#Creating the heatmap is as follows:
+#we scale by rows as the correlation for each biomarker is related to others in the same row, not column. the rows are scaled to have mean zero and standard deviation one.
+#Putting Colv = NA preserves the column order, without this the heatmap function will rearrange to order the column numerically
+Biomarker_Heatmap <- heatmap(Biomarker_Matrix, Rowv = NA, Colv = NA, col= brewer.pal(9, "RdBu"), scale = "row", margins = c(5,10))
+
+```
+The issue with using this function to create a heatmap is that it does not have a function that allows a color key to be created. If we want to include a color key, a more complete heatmap function must be used.
+
+A heatmap was created to include a color key (Row Z-Score) using the _heatmap.2_ function:
+
+```{r, echo=FALSE}
+#Heatmap with untransformed data:
+Biomarker_Heatmap2 <- heatmap.2(Biomarker_Matrix, Rowv = NA, Colv = NA, scale = "row", density.info = "none", trace = "none", key.title=NA,keysize = 1.2,densadj = 0.25, dendrogram = "none", col =  brewer.pal(11, "RdBu"))
+```
+
+```{r, include=FALSE}
+#Heatmap with log transformed data:
+Biomarker_Heatmap2_log <- heatmap.2(T_logBM, Rowv = NA, Colv = NA, scale = "row", density.info = "none",trace = "none", dendrogram = "none", col =  brewer.pal(11, "RdBu"))
+```
+
+```{r include=FALSE}
+# in order to customize your heat map colours you can perform the function:
+display.brewer.all()
+
+# this function above will provide an image as the out put, which will show you the names of the colour codes needed to change your heat map colour, for example the code used above was (9, RdBu) which means that we want to displa up to 9 different colour shades and the colour scheme is RdBu.
+```
+
+```{r two panel plot, include=FALSE}
+
+# figure 1
+#How do you plot a heatmap in a side by side panel image
+fig1<-Biomarker_Heatmap <- heatmap(Biomarker_Matrix, Rowv = NA, Colv = NA, col= brewer.pal(9, "RdBu") , scale = "row", margins = c(5,10))
+```
+
+```{r, include=FALSE}
+# figure 1
+plot1<-ggplot(data = CF_Biomarkers, aes(x = `RMT`, y = `RPA`, color=Sample)) + geom_point()
+
+```
+With the way these heatmps were created, the R software does not recognize them as images, and thus will not allow for the heat maps to be arranged together into one image as was done earlier with the bar and scatter plots. To overcome this issue, we can use the function __ggplot__ which will register the output as a graphical object. In order to make the plot look like a heat map, rather then a scatter plot, we can also incorporate the function _geom_tile_ which will plot the data as tiles, rather then data points. 
+
+```{r alternative way to heatmap, include=FALSE} 
+#editing the biomarker matrix, naming the editied matrix "Junk" since it is only an example
+junk <- Biomarker_Heatmap2$carpet %>%
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  rename(Patient = rowname)
+#creating a new heat map called heatmap_2. I believe the two is saying that you are to include all the rows in "junk after column 2??
+heatmap_2 <- junk[2:nrow(junk),] %>%
+  gather(Biomarker, value, -Patient) %>%
+  ggplot(aes(x = Patient, y = Biomarker, fill = value)) + 
+  geom_tile() +
+  scale_fill_distiller(palette = "RdBu") + 
+  theme(axis.text.x = element_text(angle = 90), 
+        axis.text.y = element_text(size = 2))+ ggtitle("Heatmap 2 without log transformation")
+heatmap_2
+```
+
+```{r, include=FALSE}
+junk <- Biomarker_Heatmap2_log$carpet %>%
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  rename(Patient = rowname)
+
+heatmap_2log <- junk[2:nrow(junk),] %>%
+  gather(Biomarker, value, -Patient) %>%
+  ggplot(aes(x = Patient, y = Biomarker, fill = value)) + 
+  geom_tile() +
+  scale_fill_distiller(palette = "RdBu") + 
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(size = 2))+ ggtitle("Heatmap 2 with log transformation")
+heatmap_2log
+```
+
+```{r, echo=FALSE}
+
+gridExtra::grid.arrange(heatmap_2, heatmap_2log, nrow = 2)
+```
+
+
+#### Principle Component Analysis
+
+Principle component analysis (PCA) is a statistical tool that correlates and transforms a large number (greater then 2) of variables, into a smaller set of variables called priciple components. These components can then be plotted and visualized. Based on how well components group together you can draw conclusions on which variables may correspond to certain attributes for each sample. For example, with biomarker research, you can find that a set of samples that come from patients carrying a disease will be grouped together, while the set of samplles taken from healthy individuals will also likely group together based on their relative abundances of certain biomarkers of disease. As this is a very important satistical tool for researchers, this article will cover how to perform this form of data analysis.
+
+For PCA, a data matrix, opposed to a data set is required. For this example we have the __CF_BiomarkerPCA__ dataset that has been turned into a matrix (Biomarker_Matrix). Before this Matrix can be used, the data also needs to be log transformed (T_logBM)
+
+```{r,include=FALSE}
+#removing the row for label
+T_logBMsub <-subset(T_logBM, select=-Label)
+
+#removing row for label on non log transformed data
+
+Biomarker_Matrixsub <- subset(Biomarker_Matrix, select = -Label)
+```
+
+Once the data has been transformed, using the function __MetaboAnalystR__ we can determine what all of the principle components are. Once we have the PCs, we plot this information into a Screeplot and a cumulative variance plot to determine which princile components hold the greatest varience and which components have a substantial impact on the clustering of data,
+```{r, include=FALSE}
+library(MetaboAnalystR)
+
+PCA1 <-prcomp(Biomarker_Matrixsub, center = TRUE, scale =TRUE)
+summary(PCA1)
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+screeplot(PCA1, type = "l", npcs = 15, main = "Screeplot of the first 24 PCs")
+abline(h = 1, col="red", lty=5)
+legend("topright", legend=c("Eigenvalue = 1"),
+       col=c("red"), lty=5, cex=0.6)
+```
+
+```{r, echo=FALSE}
+cumpro <- cumsum(PCA1$sdev^2 / sum(PCA1$sdev^2))
+plot(cumpro[0:15], xlab = "PC #", ylab = "Amount of explained variance", main = "Cumulative variance plot")
+abline(v = 6, col="blue", lty=5)
+abline(h = 0.88759, col="blue", lty=5)
+legend("topleft", legend=c("Cut-off @ PC6"),
+       col=c("blue"), lty=5, cex=0.6)
+#looking at the output we see that only the first two PCAs have an eigen value greater then one and the cut off point is PCA# 6
+
+```
+
+Once you have the background information for your data (Sreeplot and Cumulative variance plot), you can build your PCA plot. For this example, we have created a 3D PCA plot by using the functions provided by the MetaboAnalystR package.
+
+```{r, include=FALSE}
+
+#TranslogBM <- t(T_logBMsub) if we need to transpose the data set
+
+library(MetaboAnalystR)
+
+T_logBMsub<-InitDataObjects("conc", "stat", FALSE)
+T_logBMsub<-Read.TextData(T_logBMsub, "~/M.Sc Britz Mckibbin/CF_Normal_Biomarkers.csv", "colu", "disc");
+T_logBMsub<-SanityCheckData(T_logBMsub)
+T_logBMsub<-ReplaceMin(T_logBMsub);
+T_logBMsub<-PreparePrenormData(T_logBMsub)
+T_logBMsub<-Normalization(T_logBMsub, "NULL", "LogNorm", "AutoNorm", ratio=FALSE, ratioNum=20)
+T_logBMsub<-PlotNormSummary(T_logBMsub, "norm_0_", "png", 72, width=NA)
+T_logBMsub<-PlotSampleNormSummary(T_logBMsub, "snorm_0_", "png", 72, width=NA)
+T_logBMsub<-PCA.Anal(T_logBMsub)
+T_logBMsub<-PlotPCA2DScore(T_logBMsub, "pca_score2d_0_", "png", 72, width=NA, 1,2,0.95,0,0)
+T_logBMsub<-PlotPCAPairSummary(T_logBMsub, "pca_pair_0_", "png", 72, width=NA, 5)
+T_logBMsub<-PlotPCAScree(T_logBMsub, "pca_scree_0_", "png", 72, width=NA, 5)
+T_logBMsub<-PlotPCA2DScore(T_logBMsub, "pca_score2d_0_", "png", 72, width=NA, 1,2,0.95,0,0)
+T_logBMsub<-PlotPCALoading(T_logBMsub, "pca_loading_0_", "png", 72, width=NA, 1,2);
+T_logBMsub<-PlotPCABiplot(T_logBMsub, "pca_biplot_0_", "png", 72, width=NA, 1,2)
+T_logBMsub<-PlotPCA3DScoreImg(T_logBMsub, "pca_score3d_0_", "png", 72, width=NA, 1,2,3, 40)
+T_logBMsub<-PlotPCA3DLoading(T_logBMsub, "pca_loading3d_0_", "json", 1,2,3)
+
+print(T_logBMsub)
+#tried going though each step from metaboanalystR package
+
+```
+
+![figure caption here](\Users\megan\Documents\Reproducable research\R\Final Deliverable\FinalDeliverable\newplot.png)
+
+Conclusion
+==========
+
+This template has provided insight into the required functions and packages for the construction of a basic journal article. The information and formatting used in this article will stand as a reference point for all future articles generated in the Britz lab. The last topic to be covered includes the bibliography and references sections. If references were used in the article you would reference them as so @strimbu2010biomarkers. This reference was obtained from Google scholar and pasted into the BibTeX file associated with this template. If manually inputting data into the BibTeX file, follow the documentation format provided in the origonal BibTeX source document.
+
+<!--In order for your bibtex file to work ad for your reference to show up, you must have the reference name mentioned (referenced) somewhere in the article. so in order to make the reference appear the following line was included in the report:
+-->
+
+References {#references .unnumbered}
+==========

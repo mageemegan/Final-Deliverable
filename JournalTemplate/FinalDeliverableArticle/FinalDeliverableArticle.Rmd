@@ -1,0 +1,195 @@
+---
+title: Template for the Creation of Reproducable Research Journal Articles using R Markdown
+author:
+  - name: Megan Magee
+    email: mageem@mcmaster.ca
+    affiliation: Some Institute of Technology
+    footnote: Corresponding Authors
+  - name: Philip Britz-McKibbin
+    email: britz@mcmaster.ca
+    affiliation: Another University
+  - name: Additional Author
+    email: 
+    affiliation: Again Another University
+# If you do not wish to include one of the emails in the corresponding authors footnote, just simply leave the email field blank. Do NOT delete the email field.
+address:
+# Make sure not to make the two code sections the same of the superscript by authors name in the output document will become the same for both authors. and they will no longer match the footnote scrip byt department and address
+  - code: Some Institute of Technology
+    address: McMaster University, Department of Chemistry and Chemical Biology, Main St W, Hamilton, ON, L8S 4L8
+  - code: Another University
+    address: McMaster University, Department of Chemsitry and Chemical Biology, Main St W, Hamilton, ON, L8S 4L8
+  - code: Again Another University
+    address: McMaster Children's Hospital, Main St W, Hamilton, ON, L8N 3Z5
+abstract: |
+  As of late, the need for journal articles to be created in such a way that the work done and the data analysis displayed in these articles can be reproduced, has become a growing aspect of importance in the research industry. Currently, many researchers do not have a definitive practice in place that will ensure that their research can be understood and recreated by fellow researchers. Without a means of reproducing research results, the research process for many researchers may be delayed as additional time and money must be spent on attempts to recreate results that have already been proven. The purpose of this article is to act as a template fro the writing of future research papers by the Britz McKibbin group in hopes that the document will be easily reproduced by future lab members and fellow researchers alike. This article template will display the many different possible uses of R along with the formatting features that are commonly used by the Britz group and how to recreate then with the R Software.
+
+  By using the R programming software to write journal articles, all of the details related to the displayed statistical analyseies in the journal will be avaialble to the reader by looking at the R script. These R scripts which will be stored in a GitHub repository, may be accessed by the public upon request.
+
+ 
+journal: "An awesome journal"
+date: "`r Sys.Date()`"
+bibliography: mybibfile.bib
+#linenumbers: true
+#numbersections: true
+csl: elsevier-harvard.csl
+output: rticles::elsevier_article
+
+---
+<!-- First you want to load your R packages that you will need for the creation of your paper. You can do this by inserting a chunck of code as you will see below
+--> 
+```{r load-packages, include=FALSE}
+
+#By putting include = False that ensures that these packages will be loaded, but this chunk of R code will not be included in you output file
+
+library(tidyverse)
+library(gridExtra)
+library(kableExtra)
+library(rcompanion)
+library(readxl)
+library(FinalDeliverable)
+library(data.table)
+library(RColorBrewer)
+library(gplots)
+
+#If you dot already have gridExtra and kableExtra you will need to download them to do many of the necessary basic journal making functions. by typing libray and inputting those functions, you should see a pop up go across th top of your screen when you got to asve the file that will tell you you do not have these packages and it will ask you if you would like to install them
+
+# Dont forget to load the package containing your saved dataset (Both the Raw xlsx file and the .RData file) SEE: Reading and saving assay data.Rmd for more details
+```
+
+```{r load-data, echo=FALSE}
+
+data("CF_Biomarkers")
+data("CF_BiomarkersPCA")
+View(CF_Biomarkers)
+
+```
+
+```{r, echo=FALSE}
+ggplot(data = CF_Biomarkers, aes(x = `RMT`, y = `RPA`)) + geom_point()
+```
+
+Keywords
+========
+
+LaTex; R Markdown; Reproducable Research 
+
+Introduction
+=============
+
+#### background
+
+In this template journal article, we will go through and explain how to perform statistical analysis and data transformations. The Key features we will discuss include, taking the mean of a dataset variable, performing log transformations, inputing data into simple and complex tables, how to format tables, introduction of math notation into the article, plotting simple graphs along with more complex pinciple component analysis graphs and heat map analysis as well as figure input and layouts.
+
+#### Mean and Log Transformations
+
+Taking the mean of a data set is an important data transfermation that is necessary in research practice before further statistical analysis can be performed. The same can be said about log transformations. The purpose in our research for performing a log transformation on our data set is to create a set of values that are closer together. This is necessary before you perform analysis such as PCA, as highly differential variables will skewer PCA results and ofter prevent proper clustering.
+
+```{r Mean, echo=FALSE}
+# you need to define what you want to take the mean of first and from which dataset (that is included in your package) that you are getting this variable from
+
+#I am going to call the mean of my Relative Peak Areas (RPA) "means_selected"
+
+#In order to calculate the function for a range of values, you must use the select function:
+
+CF_BiomarkersPCA %>% select(CF_1:CF_5) %>% lapply(mean)
+
+# then to put the data in a table format, we will add the unlist function. the following line is naming this selection of data "means_selected"
+
+means_selected <- CF_BiomarkersPCA %>% select(CF_1:CF_5) %>% lapply(mean) %>% unlist()
+
+#To display this data type:
+
+means_selected
+
+# this will show the value of the mean in the output document but not include the code that was required to get the mean
+```
+
+
+```{r include=FALSE}
+# If we want to change the row names from 1, 2, 3, ect. into the names of ourbiomarker labels we must do the following:
+
+row.names(CF_BiomarkersPCA) <- CF_BiomarkersPCA$Label
+
+#Next the data must be transformed into a matrix so that it can be put into a heat map:
+
+Biomarker_Matrix <- data.matrix(CF_BiomarkersPCA)
+
+```
+
+The log transformation of data can be done by first defining what we want to transform, for example, the Relative Peak Areas (RPA) and performing the function `r T_log = log (Biomarker_Matrix)`. This will perform the transformation, but in order to visualize it you must thye the new transformed data's name _T_log_
+
+```{r echo=FALSE}
+
+#Creating the heatmap is as follows:
+#we scale by rows as the correlation for each biomarker is related to others in the same row, not column. the rows are scaled to have mean zero and standard deviation one.
+#Putting Colv = NA preserves the column order, without this the heatmap function will rearrange to order the column numerically
+Biomarker_Heatmap <- heatmap(Biomarker_Matrix, Rowv = NA, Colv = NA, col= brewer.pal(9, "RdBu") , scale = "row", margins = c(5,10))
+```
+
+```{r}
+heatmap.2(Biomarker_Matrix, Rowv = NA, Colv = NA, scale = "row", density.info = "none", trace = "none", col =  brewer.pal(11, "RdBu"))
+```
+
+```{r include=FALSE}
+# in order to customize your heat map colours you can perform the function:
+display.brewer.all()
+
+# this function above will provide an image as the out put, which will show you the names of the colour codes needed to change your heat map colour, for example the code used above was (9, RdBu) which means that we want to displa up to 9 different colour shades and the colour scheme is RdBu.
+```
+#### Usage
+
+Once the package is properly installed, you can use the document class
+*elsarticle* to create a manuscript. Please make sure that your
+manuscript follows the guidelines in the Guide for Authors of the
+relevant journal. It is not necessary to typeset your manuscript in
+exactly the same way as an article, unless you are submitting to a
+camera-ready copy (CRC) journal.
+
+#### Functionality
+
+The Elsevier article class is based on the standard article class and
+supports almost all of the functionality of that class. In addition, it
+features commands and options to format the
+
+-   document style
+
+-   baselineskip
+
+-   front matter
+
+-   keywords and MSC codes
+
+-   theorems, definitions and proofs
+
+-   lables of enumerations
+
+-   citation style and labeling.
+
+Materials and Methods
+=====================
+
+Front matter
+============
+
+The author names and affiliations could be formatted in two ways:
+
+(1) Group the authors per affiliation.
+
+(2) Use footnotes to indicate the affiliations.
+
+See the front matter of this document for examples. You are recommended
+to conform your choice to the journal you are submitting to.
+
+Bibliography styles
+===================
+
+There are various bibliography styles available. You can select the
+style of your choice in the preamble of this document. These styles are
+Elsevier styles based on standard styles like Harvard and Vancouver.
+Please use BibTeX to generate your bibliography and include DOIs
+whenever available.
+
+Here are two sample references: @Feynman1963118 [@Dirac1953888].
+
+References {#references .unnumbered}
+==========
